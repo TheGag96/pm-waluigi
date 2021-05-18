@@ -1,0 +1,402 @@
+new waluigi stuff
+
+1
+0x34 * X
+
+2898
+
+b6c0
+
+269c 26a4 26b0 26b4
+26dc
+
+81087940
+810d621c
+
+falcon set_camera: 810df7e4
+some character pointer for falcon''s set_camera: 8127f2c4
+
+waluigi counterpart? 81261580
+
+3bc0044f 93c10068 3be00000 38000002 90010070
+
+812620e4: r28 or r31 on onStartFinal, r31 on onEndFinal
+
+81261580 + 60 -> 812620e4
+
+
+[81261580 + 60] -> [812620e4 + D8] -> [812620f0 + 64] -> 81265b08
+
+
+
+
+
+# @ 0x16CD0
+
+every_frame:
+  every_frame_start:
+    # set up stack / preserve variables
+    stwu sp, -32(sp)
+    mflr r0
+    stw r0, 36(sp)
+    stw r3, 8(sp)
+    stw r4, 12(sp)
+    stw r5, 16(sp)
+
+    # grab our "mailbox" variable, LA-Basic[74] (1000004A), using the getInt function
+    bl get_mailbox
+
+    cmpwi r3, 1  # if message is 1,
+    beq- enter_final_smash
+    cmpwi r3, 2  # if message is 2,
+    beq- exit_final_smash
+    b every_frame_end
+
+  enter_final_smash:
+    # freeze pause camera
+    li r5, 1
+    bl set_camera_freeze
+
+    # hide stage layer
+    li r5, 0
+    bl set_layer_disp
+
+    # get camera instance pointer
+    lwz r3, -0x41A8(r13)
+
+    # disable zooming (fixes training mode pause)
+    # call setDisableZoomStart/[CameraController]/(cm_camera_controller.o)
+    lis r12, 0x8009
+    ori r12, r12, 0xD250
+    mtctr r12
+    bctrl
+
+    # load new mailbox value (3 = in final smash)
+    li r4, 3
+    b set_var
+
+  exit_final_smash:
+    # unfreeze pause camera
+    li r5, 0
+    bl set_camera_freeze
+
+    # unhide stage layer
+    li r5, 1
+    bl set_layer_disp
+
+    # get camera instance pointer
+    lwz r3, -0x41A8(r13)
+
+    # reenable zooming (fixes training mode pause)
+    # call setDisableZoomEnd/[CameraController]/(cm_camera_controller.o)
+    lis r12, 0x8009
+    ori r12, r12, 0xD2B0
+    mtctr r12
+    bctrl
+
+    # load new mailbox value (0 = not in final smash)
+    li r4, 0
+
+  set_var:
+    # set our mailbox variable by calling setInt (807ACA00)
+    # r4 contains its new value
+    bl set_mailbox
+
+  every_frame_end:
+    # restore variables
+    lwz r3, 8(sp)
+    lwz r4, 12(sp)
+    lwz r5, 16(sp)
+    lwz r0, 36(sp)
+    mtlr r0
+    lwz sp, 0(sp)
+
+    # restore old code
+    li r0, 0
+
+    blr
+
+on_deactivate: # called on match end - needed to clean up the camera freeze!
+  on_deactivate_start:
+    # set up stack / preserve variables
+    stwu sp, -16(sp)
+    mflr r0
+    stw r0, 20(sp)
+    stw r3, 8(sp)
+    stw r4, 12(sp)
+
+    bl get_mailbox
+
+    # only need to clean up if in the final smash
+    cmpwi r3, 3
+    bne+ on_deactivate_end
+
+    # undo the camera freeze.
+    # setting and unsetting the camera freeze seems to actually work like a stack.
+    # for every time you call this function with r4 = 1, you need to call it as many times
+    # with r4 = 0. so hopefully it was called with 1 only once!!
+    li r5, 0
+    bl set_camera_freeze
+
+    # reenable all disabled layers
+    li r5, 1
+    bl set_layer_disp
+
+    # get camera instance pointer
+    lwz r3, -0x41A8(r13)
+
+    # reenable zooming (fixes training mode pause)
+    # call setDisableZoomEnd/[CameraController]/(cm_camera_controller.o)
+    lis r12, 0x8009
+    ori r12, r12, 0xD2B0
+    mtctr r12
+    bctrl
+
+    # set our mailbox variable to 0  so we don't do this a second time
+    # onDeactivate appears to be called like 3 times over the course of ending a match
+    # the "stack" can go negative if you call too many times with 0, so it's important
+    # that the calls to this function are perfectly matched
+    li r4, 0
+    bl set_mailbox
+
+  on_deactivate_end:
+    lwz r3, 8(sp)
+    lwz r4, 12(sp)
+    lwz r0, 20(sp)
+    mtlr r0
+    lwz sp, 0(sp)
+    blr
+
+get_mailbox:
+  get_mailbox_start:
+    # set up stack / preserve variables
+    stwu sp, -16(sp)
+    mflr r0
+    stw r0, 20(sp)
+    stw r4, 8(sp)
+    stw r27, 12(sp)
+
+    # get character-related pointer needed to call getInt/setInt function
+    lwz r27, 0x60(r31)
+    lwz r27, 0xD8(r27)
+    lwz r27, 0x64(r27)
+
+    # grab our "mailbox" variable, LA-Basic[74] (1000004A), using the getInt function
+    mr r3, r27
+    lis r4, 0x1000
+    addi r4, r4, 0x004A
+    lwz r12, 0(r27)
+    lwz r12, 0x18(r12)
+    mtctr r12
+    bctrl
+
+  get_mailbox_end:
+    # r3 now contains the value of the variable
+    lwz r4, 8(sp)
+    lwz r27, 12(sp)
+    lwz r0, 20(sp)
+    mtlr r0
+    lwz sp, 0(sp)
+    blr
+
+set_mailbox:
+  set_mailbox_start:
+    # set up stack / preserve variables
+    stwu sp, -16(sp)
+    mflr r0
+    stw r0, 20(sp)
+    stw r5, 8(sp)
+    stw r27, 12(sp)
+
+    # get character-related pointer needed to call getInt/setInt function
+    lwz r27, 0x60(r31)
+    lwz r27, 0xD8(r27)
+    lwz r27, 0x64(r27)
+
+    # set our mailbox variable by calling setInt (807ACA00)
+    mr r3, r27
+    lwz r12, 0(r27)
+    lwz r12, 0x1C(r12)
+    lis r5, 0x1000
+    addi r5, r5, 0x004A
+    mtctr r12
+    bctrl
+
+  set_mailbox_end:
+    lwz r5, 8(sp)
+    lwz r27, 12(sp)
+    lwz r0, 20(sp)
+    mtlr r0
+    lwz sp, 0(sp)
+    blr
+
+set_camera_freeze:
+  set_camera_freeze_start:
+    # set up stack / preserve variables
+    stwu sp, -16(sp)
+    mflr r0
+    stw r0, 20(sp)
+    stw r3, 8(sp)
+    stw r4, 12(sp)
+
+    stw r5, 12(sp)
+
+    # get camera instance pointer
+    lwz r3, -0x41A8(r13)
+
+    li r4, 7
+
+    lis r12, 0x8009
+    ori r12, r12, 0xCA00
+    mtctr r12
+    bctrl
+
+    lwz r4, 12(sp)
+
+    lis r12, 0x800A
+    ori r12, r12, 0x9600
+    mtctr r12
+    bctrl
+
+  set_camera_freeze_end:
+    lwz r3, 8(sp)
+    lwz r4, 12(sp)
+    lwz r0, 20(sp)
+    mtlr r0
+    lwz sp, 0(sp)
+    blr
+
+set_layer_disp:
+  set_layer_disp_start:
+    # set up stack / preserve variables
+    stwu sp, -20(sp)
+    mflr r0
+    stw r0, 24(sp)
+    stw r3, 8(sp)
+    stw r4, 12(sp)
+    stw r27, 16(sp)
+
+    # setLayerDispStatus/[gfSceneRoot]/(gf_3d_scene.o)
+    lis r12, 0x8000,
+    ori r12, r12, 0xD234
+    mtctr r12
+
+    # get pointer to current scene?
+    lis r27, 0x8059
+    ori r27, r27, 0xFF80
+    lwz r27, 0(r27)
+
+    # for some reason, falcon calls this functionwith 0, 3, 2, and 6
+    # here, we call it without 2, which allows articles to still display
+    # r5 will contain whether to turn these layers on (0 or 1)
+    li r4, 0
+    mr r3, r27
+    bctrl
+
+    li r4, 3
+    mr r3, r27
+    bctrl
+
+    li r4, 6
+    mr r3, r27
+    bctrl
+
+  set_layer_disp_end:
+    lwz r3, 8(sp)
+    lwz r4, 12(sp)
+    lwz r27, 16(sp)
+    lwz r0, 24(sp)
+    mtlr r0
+    lwz sp, 0(sp)
+    blr
+
+
+
+
+81286790
+ra-basic[28]: 81261898
+is alive flag 1: 81286650
+
+
+waluigi:
+@ 810e2704 (just before getresfilefromid call)
+r3 - 80629980
+r4 - 5
+r5 - 1
+r6 - b
+r7 - 1
+r8 - -1
+
+@ 801df83c (just before getresanmscn call)
+r3 - 805b4e44
+r4 - 0
+r5 - 1
+r6 - 0
+r7 - 805b4df8
+r8 - 916e8b78
+
+
+
+
+falcon:
+@ 810df83c (just before getresanmscn call)
+r3 - 805b4d24
+r4 - 0
+r5 - 1
+r6 - 92cd7cf8
+r7 - 805b4cd8
+r8 - 92cd7cf8
+
+80046658 is where getData is called where the actual location of the brres is found
+
+set_layer_disp_status is what makes all other stuff go away
+
+
+
+
+
+
+Set LA-Bit[25] to false
+
+setPos @ 8072e898
+- r4: pointer to vector struct
+  * +0x0 = x?
+  * +0x4 = y
+  * +0x8 = z?
+
+setLr @ 8072e6d4
+- r3: context?
+- r4: pointer to something
+
+setRot @ 8072fabc
+it gets set to 0 for us?
+
+updateNodeSRT @ 8070f340
+
+set_camera
+
+
+
+
+81265b08
+
+
+81261580 + C3C -> 812620f0 + c -> 81262f24
+81262f24
+
+
+
+812ca564
+
+
+waluigi srt:
+812c8bc0 - in r24
+81261580
+
+
+captain srt: r24 = r7 = 8127f2c4 + 3c -> 8127e760
+
+
+81261580
+
+8108C080
