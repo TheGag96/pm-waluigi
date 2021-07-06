@@ -31,7 +31,7 @@ waluigi counterpart? 81261580
 
 
 
-# @ 0x16CD0
+# @ 0x16CE0
 
 every_frame:
   every_frame_start:
@@ -70,6 +70,10 @@ every_frame:
     ori r12, r12, 0xD250
     mtctr r12
     bctrl
+
+    lwz r3, -0x60(r31)
+    li r4, 10
+    bl 0x10 # set_camera later in the module. wish i could do this without hardcoding
 
     # load new mailbox value (3 = in final smash)
     li r4, 3
@@ -115,6 +119,8 @@ every_frame:
     li r0, 0
 
     blr
+
+.int 0xFADEF00D
 
 on_deactivate: # called on match end - needed to clean up the camera freeze!
   on_deactivate_start:
@@ -286,7 +292,7 @@ set_layer_disp:
     ori r27, r27, 0xFF80
     lwz r27, 0(r27)
 
-    # for some reason, falcon calls this functionwith 0, 3, 2, and 6
+    # for some reason, falcon calls this function with 0, 3, 2, and 6
     # here, we call it without 2, which allows articles to still display
     # r5 will contain whether to turn these layers on (0 or 1)
     li r4, 0
@@ -400,3 +406,12 @@ captain srt: r24 = r7 = 8127f2c4 + 3c -> 8127e760
 81261580
 
 8108C080
+
+
+
+
+dynamic cast relocations:
+0x26B0
+0x26DC
+
+call set_camera with r3 = 0x60(r31)
