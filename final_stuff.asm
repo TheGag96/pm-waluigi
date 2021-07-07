@@ -229,6 +229,7 @@ set_camera_freeze:
 
     li r4, 7
 
+    # call getCameraController/[CameraController]/(cm_camera_controller.o)
     lis r12, 0x8009
     ori r12, r12, 0xCA00
     mtctr r12
@@ -236,6 +237,7 @@ set_camera_freeze:
 
     lwz r4, 12(sp)
 
+    # call setFreezeMode/[cmPhotoController]/(cm_controller_photo.o)
     lis r12, 0x800A
     ori r12, r12, 0x9600
     mtctr r12
