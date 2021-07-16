@@ -3,12 +3,13 @@
 every_frame:
   every_frame_start:
     # set up stack / preserve variables
-    stwu sp, -32(sp)
+    stwu sp, -52(sp)
     mflr r0
-    stw r0, 36(sp)
+    stw r0, 56(sp)
     stw r3, 8(sp)
     stw r4, 12(sp)
     stw r5, 16(sp)
+    # sp+20, for 12 bytes, is a Vec3 used to change Waluigi's position
 
     # grab our "mailbox" variable, LA-Basic[74] (1000004A), using the getInt function
     bl get_mailbox
@@ -25,8 +26,8 @@ every_frame:
     bl set_camera_freeze
 
     # hide stage layer
-    # li r5, 0
-    # bl set_layer_disp
+    li r5, 0
+    bl set_layer_disp
 
     # get camera instance pointer
     lwz r3, -0x41A8(r13)
@@ -44,6 +45,29 @@ every_frame:
 
     .int 0xC0DE0002 # hook that will be replaced with call to push_stage_camera in the module
 
+    li r3, 0
+    .int 0xC0DE0004 # hook that will be replaced with call to set_visibility_stage_effect in the module
+
+
+    # load the vector (0.0, 3000.0, 0.0) onto the stack
+    addi r4, sp, 20
+    li r3, 0
+    stw r3, 0(r4)
+    stw r3, 8(r4)
+    lis r3, 0x453b
+    ori r3, r3, 0x8000
+    stw r3, 4(r4)
+
+    mr r3, r31
+    lwz r3, 0x60(r3)
+    lwz r3, 0x18(r3)
+
+    # call setPos/[soPostureModuleSimple]/(so_posture_module_impl.o)
+    lis r12, 0x8073
+    subi r12, r12, 0x1768
+    mtctr r12
+    bctrl
+
     # load new mailbox value (3 = in final smash)
     li r4, 3
     b set_var
@@ -53,13 +77,16 @@ every_frame:
     li r5, 0
     bl set_camera_freeze
 
+    li r3, 1
+    .int 0xC0DE0004 # hook that will be replaced with call to set_visibility_stage_effect in the module
+
     .int 0xC0DE0003 # hook that will be replaced with call to pop_stage_camera in the module
 
     .int 0xC0DE0001 # hook that will be replaced with call to reset_camera in the module
 
     # unhide stage layer
-    # li r5, 1
-    # bl set_layer_disp
+    li r5, 1
+    bl set_layer_disp
 
     # get camera instance pointer
     lwz r3, -0x41A8(r13)
@@ -84,7 +111,7 @@ every_frame:
     lwz r3, 8(sp)
     lwz r4, 12(sp)
     lwz r5, 16(sp)
-    lwz r0, 36(sp)
+    lwz r0, 56(sp)
     mtlr r0
     lwz sp, 0(sp)
 
@@ -109,6 +136,9 @@ on_deactivate: # called on match end - needed to clean up the camera freeze!
     # only need to clean up if in the final smash
     cmpwi r3, 3
     bne+ on_deactivate_end
+
+    li r3, 1
+    .int 0xC0DE0004 # hook that will be replaced with call to set_visibility_stage_effect in the module
 
     .int 0xC0DE0003 # hook that will be replaced with call to pop_stage_camera in the module
 

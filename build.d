@@ -9,6 +9,7 @@ static immutable uint[] REPLACES =[
   0x1714C,  // reset_camera
   0x17198,  // push_stage_camera
   0x17200,  // pop_stage_camera
+  0x17220,  // set_visibility_stage_effect
 ];
 
 int main() {
@@ -40,7 +41,7 @@ int main() {
 
   foreach (i; iota(0, section1.length, 4)) {
     if (section1[i..i+2] == [0xC0, 0xDE]) {
-      uint chosen = bigEndianToNative!ushort(section1[i+2..i+4][0..2]); //lol wish it could figure out the length without this
+      uint chosen = bigEndianToNative!ushort(section1[i+2..i+4][0..2]); //lol wish the compiler could figure out the length without the [0..2]
       if (chosen >= REPLACES.length) continue;
 
       section1.patchBranch(cast(uint) i, REPLACES[chosen], true);
