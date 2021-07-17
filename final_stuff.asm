@@ -98,6 +98,15 @@ every_frame:
     mtctr r12
     bctrl
 
+    # clear flag that freezes stage lighting
+    # TODO: move this to being done in a phase when the final smash state is finally exited
+    # (e.g. when the final smash lighting fades out)
+    lis r3, 0x805A
+    lwz r3, -0x80(r3)
+    lbz r0, 0x465(r3)
+    rlwimi  r0, r31, 3, 28, 28
+    stb r0, 0x465(r3)
+
     # load new mailbox value (0 = not in final smash)
     li r4, 0
 
@@ -164,6 +173,14 @@ on_deactivate: # called on match end - needed to clean up the camera freeze!
     ori r12, r12, 0xD2B0
     mtctr r12
     bctrl
+
+    # clear flag that freezes stage lighting
+    # we're basically undoing a set on this flag done by reset_camera
+    lis r3, 0x805A
+    lwz r3, -0x80(r3)
+    lbz r0, 0x465(r3)
+    rlwimi  r0, r31, 3, 28, 28
+    stb r0, 0x465(r3)
 
     # set our mailbox variable to 0  so we don't do this a second time
     # onDeactivate appears to be called like 3 times over the course of ending a match
