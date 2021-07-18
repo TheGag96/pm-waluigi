@@ -1,6 +1,6 @@
 import std.stdio, std.file, std.algorithm, std.process, std.string, std.conv, std.bitmanip, std.range;
 
-enum INSERT_ADDRESS     = 0x16CE0;
+enum INSERT_ADDRESS     = 0x172A0;
 enum EVERY_FRAME_HOOK   = 0x9954;
 enum ON_DEACTIVATE_HOOK = 0xA7A0;
 
@@ -58,7 +58,7 @@ void patch(ubyte[] data, uint address, ubyte[] stuff) {
 }
 
 void patchBranch(ubyte[] data, uint from, uint to, bool link) {
-  data.patch(from, nativeToBigEndian!uint(0x48000000 | (to - from) | link)[]);
+  data.patch(from, nativeToBigEndian!uint(0x48000000 | ((to - from) & 0x03FFFFFF) | link)[]);
 }
 
 

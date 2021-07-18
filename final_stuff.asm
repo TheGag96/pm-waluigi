@@ -29,7 +29,7 @@ every_frame:
 
     # hide stage layer
     li r5, 0
-    # bl set_layer_disp
+    bl set_layer_disp
 
     # get camera instance pointer
     lwz r3, -0x41A8(r13)
@@ -65,10 +65,10 @@ every_frame:
     lwz r3, 0x18(r3)
 
     # call setPos/[soPostureModuleSimple]/(so_posture_module_impl.o)
-    lis r12, 0x8073
-    subi r12, r12, 0x1768
-    mtctr r12
-    bctrl
+    # lis r12, 0x8073
+    # subi r12, r12, 0x1768
+    # mtctr r12
+    # bctrl
 
     # load new mailbox value (4 = in final smash)
     li r4, 4
@@ -88,7 +88,7 @@ every_frame:
 
     # unhide stage layer
     li r5, 1
-    # bl set_layer_disp
+    bl set_layer_disp
 
     # get camera instance pointer
     lwz r3, -0x41A8(r13)
@@ -169,7 +169,7 @@ on_deactivate: # called on match end - needed to clean up the camera freeze!
 
     # reenable all disabled layers
     li r5, 1
-    # bl set_layer_disp
+    bl set_layer_disp
 
     # get camera instance pointer
     lwz r3, -0x41A8(r13)
