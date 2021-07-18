@@ -50,6 +50,19 @@ every_frame:
     li r3, 0
     .int 0xC0DE0004 # hook that will be replaced with call to set_visibility_stage_effect in the module
 
+    # NEED TO RELOCATE THIS TO SECTION 6, OFFSET 0x330
+    lis r3, 0
+    addi r3, r3, 0
+
+    mr r4, r31
+    lwz r4, 0x60(r3)
+    lwz r4, 0x18(r3)
+
+    # call getPos/[soPostureModuleSimple]/(so_posture_module_impl.o)
+    lis r12, 0x8073
+    subi r12, r12, 0x564
+    mtctr r12
+    bctrl
 
     # load the vector (0.0, 3000.0, 0.0) onto the stack
     addi r4, sp, 20
@@ -65,10 +78,10 @@ every_frame:
     lwz r3, 0x18(r3)
 
     # call setPos/[soPostureModuleSimple]/(so_posture_module_impl.o)
-    # lis r12, 0x8073
-    # subi r12, r12, 0x1768
-    # mtctr r12
-    # bctrl
+    lis r12, 0x8073
+    subi r12, r12, 0x1768
+    mtctr r12
+    bctrl
 
     # load new mailbox value (4 = in final smash)
     li r4, 4
@@ -97,6 +110,20 @@ every_frame:
     # call setDisableZoomEnd/[CameraController]/(cm_camera_controller.o)
     lis r12, 0x8009
     ori r12, r12, 0xD2B0
+    mtctr r12
+    bctrl
+
+    # NEED TO RELOCATE THIS TO SECTION 6, OFFSET 0x330
+    lis r4, 0
+    addi r4, r4, 0
+
+    mr r3, r31
+    lwz r3, 0x60(r3)
+    lwz r3, 0x18(r3)
+
+    # call setPos/[soPostureModuleSimple]/(so_posture_module_impl.o)
+    lis r12, 0x8073
+    subi r12, r12, 0x1768
     mtctr r12
     bctrl
 
@@ -150,8 +177,12 @@ on_deactivate: # called on match end - needed to clean up the camera freeze!
     bl get_mailbox
 
     # only need to clean up if in the final smash
-    cmpwi r3, 4
-    bne+ on_deactivate_end
+    # normally, we'd check for 4 here, since that signifies we're in the final smash.
+    # however, the PSA sets the flag to 3 on exit for the action override in which the tennis is happening
+    # the exit routines actually DO run when you exit the match, funnily enough. we need to check for
+    # 3 as well as 4 as a result
+    cmpwi r3, 3
+    blt+ on_deactivate_end
 
     li r3, 1
     .int 0xC0DE0004 # hook that will be replaced with call to set_visibility_stage_effect in the module
