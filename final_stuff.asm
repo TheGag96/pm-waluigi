@@ -18,6 +18,8 @@ every_frame:
     beq- enter_final_smash
     cmpwi r3, 2  # if message is 2,
     beq- exit_final_smash
+    cmpwi r3, 3  # if message is 3,
+    beq- finish_final_smash
     b every_frame_end
 
   enter_final_smash:
@@ -27,7 +29,7 @@ every_frame:
 
     # hide stage layer
     li r5, 0
-    bl set_layer_disp
+    # bl set_layer_disp
 
     # get camera instance pointer
     lwz r3, -0x41A8(r13)
@@ -68,8 +70,8 @@ every_frame:
     mtctr r12
     bctrl
 
-    # load new mailbox value (3 = in final smash)
-    li r4, 3
+    # load new mailbox value (4 = in final smash)
+    li r4, 4
     b set_var
 
   exit_final_smash:
@@ -86,7 +88,7 @@ every_frame:
 
     # unhide stage layer
     li r5, 1
-    bl set_layer_disp
+    # bl set_layer_disp
 
     # get camera instance pointer
     lwz r3, -0x41A8(r13)
@@ -98,6 +100,11 @@ every_frame:
     mtctr r12
     bctrl
 
+    # load new mailbox value (0 = not in final smash)
+    li r4, 0
+    b set_var
+
+  finish_final_smash:
     # clear flag that freezes stage lighting
     # TODO: move this to being done in a phase when the final smash state is finally exited
     # (e.g. when the final smash lighting fades out)
@@ -107,8 +114,8 @@ every_frame:
     rlwimi  r0, r31, 3, 28, 28
     stb r0, 0x465(r3)
 
-    # load new mailbox value (0 = not in final smash)
     li r4, 0
+    b set_var
 
   set_var:
     # set our mailbox variable by calling setInt (807ACA00)
@@ -143,7 +150,7 @@ on_deactivate: # called on match end - needed to clean up the camera freeze!
     bl get_mailbox
 
     # only need to clean up if in the final smash
-    cmpwi r3, 3
+    cmpwi r3, 4
     bne+ on_deactivate_end
 
     li r3, 1
@@ -162,7 +169,7 @@ on_deactivate: # called on match end - needed to clean up the camera freeze!
 
     # reenable all disabled layers
     li r5, 1
-    bl set_layer_disp
+    # bl set_layer_disp
 
     # get camera instance pointer
     lwz r3, -0x41A8(r13)
