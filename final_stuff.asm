@@ -55,8 +55,8 @@ every_frame:
     addi r3, r3, 0
 
     mr r4, r31
-    lwz r4, 0x60(r3)
-    lwz r4, 0x18(r3)
+    lwz r4, 0x60(r4)
+    lwz r4, 0x18(r4)
 
     # call getPos/[soPostureModuleSimple]/(so_posture_module_impl.o)
     lis r12, 0x8073
