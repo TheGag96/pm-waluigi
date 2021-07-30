@@ -15,7 +15,15 @@ static immutable uint[] REPLACES =[
 int main() {
   //very hacky patcher because i'm tired of copy-pasting in brawlbox module editor
 
-  auto shell = execute(["wine", "powerpc-gekko-as.exe", "-a32", "-mbig", "-mregnames", "-mgekko", "final_stuff.asm"], null, Config.suppressConsole);
+  version (Windows) {
+    string[] command;
+  }
+  else {  //linux moment
+    string[] command = ["wine"];
+  }
+  command ~= ["powerpc-gekko-as.exe", "-a32", "-mbig", "-mregnames", "-mgekko", "final_stuff.asm"];
+
+  auto shell = execute(command, null, Config.suppressConsole);
 
   if (!exists("a.out")) {
     stderr.writeln("woops");
@@ -48,6 +56,27 @@ int main() {
     }
   }
 
+  {
+    //hack in the two relocations i use in my own asm. this code sucks
+    //wish this could be smarter but it would take way too much work because of how relocation data works
+
+    enum uint RELOC_SIZE_LOW_BYTE_OFFSET = 0x23557;
+    enum uint RELOC_INSERT_OFFSET        = 0x27F00;
+    enum uint LAST_PIT_RELOC_OFFSET      = 0x1720C; //this could change if i put more relocations after pop_stage_camera
+
+    moduleBytes.patch(RELOC_SIZE_LOW_BYTE_OFFSET, [0xB0]); //increases by 0x20 bytes
+
+    moduleBytes.insertInPlace(RELOC_INSERT_OFFSET, cast(ubyte[]) [0x01, 0x08, 0x06, 0x06, 0x00, 0x00, 0x03, 0x30, 0x00, 0x04, 0x04, 0x06, 0x00, 0x00, 0x03, 0x30, 0x00, 0x9C, 0x06, 0x06, 0x00, 0x00, 0x03, 0x30, 0x00, 0x04, 0x04, 0x06, 0x00, 0x00, 0x03, 0x30]);
+
+    //look for lis r3, 0 ; addi r3, r3, 0
+    auto firstRelocOffset = section1[INSERT_ADDRESS  ..$].countUntil([0x3C, 0x60, 0x00, 0x00, 0x38, 0x63, 0x00, 0x00]) + INSERT_ADDRESS;
+    //look for lis r4, 0 ; addi r4, r4, 0
+    auto thirdRelocOffset = section1[firstRelocOffset..$].countUntil([0x3C, 0x80, 0x00, 0x00, 0x38, 0x84, 0x00, 0x00]) + firstRelocOffset;
+
+    moduleBytes.patch(RELOC_INSERT_OFFSET,      nativeToBigEndian!ushort(cast(ushort) (firstRelocOffset - LAST_PIT_RELOC_OFFSET)));
+    moduleBytes.patch(RELOC_INSERT_OFFSET + 16, nativeToBigEndian!ushort(cast(ushort) (thirdRelocOffset - (firstRelocOffset + 4) ))); // second reloc offset is 4 bytes after the first
+  }
+
   std.file.write("ft_waluigi.rel", moduleBytes);
 
   return 0;
@@ -60,8 +89,3 @@ void patch(ubyte[] data, uint address, ubyte[] stuff) {
 void patchBranch(ubyte[] data, uint from, uint to, bool link) {
   data.patch(from, nativeToBigEndian!uint(0x48000000 | ((to - from) & 0x03FFFFFF) | link)[]);
 }
-
-
-/*
-  3C C0 00 00 80 06 00 00 90 05 00 00 90 85 00 04
-*/

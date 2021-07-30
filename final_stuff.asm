@@ -83,6 +83,22 @@ every_frame:
     mtctr r12
     bctrl
 
+    # set the magnifying glass of all 4 characters to NOT show
+    li r3, 0
+    bl set_all_magnifying_glass
+
+    # remove all graphic effects in order to get rid of the final smash aura
+    # this mimics Captain Falcon's FS
+    # this calls 807A48A0 removeAll/[soEffectModuleImpl]/(so_effect_module_impl.o)
+    lwz r3, 0x60(r31)
+    lwz r3, 0xD8(r3)
+    lwz r3, 0x88(r3)
+    li r4, 8
+    lwz r12, 0(r3)
+    lwz r12, 0x5C(r12)
+    mtctr r12
+    bctrl
+
     # load new mailbox value (4 = in final smash)
     li r4, 4
     b set_var
@@ -124,6 +140,23 @@ every_frame:
     # call setPos/[soPostureModuleSimple]/(so_posture_module_impl.o)
     lis r12, 0x8073
     subi r12, r12, 0x1768
+    mtctr r12
+    bctrl
+
+    # set the magnifying glass of all 4 characters to show
+    li r3, 1
+    bl set_all_magnifying_glass
+
+    # reactivate the final smash aura
+    # this mimics Captain Falcon's FS
+    # this calls 807A479C - reqEmit/[soEffectModuleImpl]/(so_effect_module_impl.o)
+    lwz r3, 0x60(r31)
+    lwz r3, 0xD8(r3)
+    lwz r3, 0x88(r3)
+    li r4, 72
+    li r5, 8
+    lwz r12, 0(r3)
+    lwz r12, 0x54(r12)
     mtctr r12
     bctrl
 
@@ -181,7 +214,7 @@ on_deactivate: # called on match end - needed to clean up the camera freeze!
     # however, the PSA sets the flag to 3 on exit for the action override in which the tennis is happening
     # the exit routines actually DO run when you exit the match, funnily enough. we need to check for
     # 3 as well as 4 as a result
-    cmpwi r3, 3
+    cmpwi r3, 2
     blt+ on_deactivate_end
 
     li r3, 1
@@ -376,6 +409,86 @@ set_layer_disp:
     lwz r4, 12(sp)
     lwz r27, 16(sp)
     lwz r0, 24(sp)
+    mtlr r0
+    lwz sp, 0(sp)
+    blr
+
+set_all_magnifying_glass:
+  set_all_magnifying_glass_start:
+    # set up stack / preserve variables
+    stwu sp, -28(sp)
+    mflr r0
+    stw r0, 32(sp)
+    stw r3, 8(sp)  # passed-in - 1 to set LA-Bit[25] true, 0 for false
+    stw r4, 12(sp)
+    stw r27, 16(sp)  # loop counter
+    # 20(sp) stores current fighter pointer
+    # 24(sp) stores chosen function (onFlag/offFlag)
+
+    # 807ACD10 00000034 807ACD10 0 onFlag/[soWorkManageModuleImpl]/(so_work_manage_module_impl.o)
+    # 807ACD44 00000034 807ACD44 0 offFlag/[soWorkManageModuleImpl]/(so_work_manage_module_impl.o)
+
+    lwz r27, 0x60(r31)
+    lwz r27, 0xD8(r27)
+    lwz r27, 0x64(r27)
+    lwz r27, 0x00(r27)
+
+    lis r4, 0x8062
+    addi r4, r4, 0x3324
+    stw r4, 20(sp)
+
+    lwz r12, 0(r31)
+
+    cmpwi r3, 1
+    bne+ off_flag
+
+    lwz r12, 0x50(r27) # onFlag/[soWorkManageModuleImpl]/(so_work_manage_module_impl.o)
+    b store_flag_func
+
+  off_flag:
+    lwz r12, 0x54(r27) # offFlag/[soWorkManageModuleImpl]/(so_work_manage_module_impl.o)
+
+  store_flag_func:
+    stw r12, 24(sp)
+
+    li r27, 0
+
+  player_loop:
+    lwz r3, 20(sp)
+    addi r4, r3, 0x244
+    stw r4, 20(sp)
+
+    lwz r3, 0(r3)
+
+    # must be pointer-like
+    lis r4, 0x8000
+    cmplw r3, r4
+    blt- before_next_loop
+    lis r4, 0xA000
+    cmplw r3, r4
+    bge- before_next_loop
+
+    lwz r3, 0x60(r3)
+    lwz r3, 0xD8(r3)
+    lwz r3, 0x64(r3)
+
+    lis r4, 0x1200
+    addi r4, r4, 0x19
+
+    lwz r12, 24(sp)
+    mtctr r12
+    bctrl
+
+  before_next_loop:
+    addi r27, r27, 1
+    cmpwi r27, 4
+    blt+ player_loop
+
+  set_all_magnifying_glass_end:
+    lwz r3, 8(sp)
+    lwz r4, 12(sp)
+    lwz r27, 16(sp)
+    lwz r0, 32(sp)
     mtlr r0
     lwz sp, 0(sp)
     blr
