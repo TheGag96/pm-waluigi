@@ -26,7 +26,7 @@ int main() {
   auto shell = execute(command, null, Config.suppressConsole);
 
   if (!exists("a.out")) {
-    stderr.writeln("woops");
+    stderr.writeln("woops:\n", shell.output);
     return 1;
   }
 

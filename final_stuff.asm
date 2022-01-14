@@ -15,11 +15,20 @@ every_frame:
     bl get_mailbox
 
     cmpwi r3, 1  # if message is 1,
-    beq- enter_final_smash
+    beq- pre_final_smash
     cmpwi r3, 2  # if message is 2,
-    beq- exit_final_smash
+    beq- enter_final_smash
     cmpwi r3, 3  # if message is 3,
+    beq- exit_final_smash
+    cmpwi r3, 4  # if message is 4,
     beq- finish_final_smash
+    b every_frame_end
+
+  pre_final_smash:
+    # set the magnifying glass of all 4 characters to NOT show
+    li r3, 0
+    bl set_all_magnifying_glass
+
     b every_frame_end
 
   enter_final_smash:
@@ -99,8 +108,8 @@ every_frame:
     mtctr r12
     bctrl
 
-    # load new mailbox value (4 = in final smash)
-    li r4, 4
+    # load new mailbox value (5 = in final smash)
+    li r4, 5
     b set_var
 
   exit_final_smash:
@@ -210,12 +219,24 @@ on_deactivate: # called on match end - needed to clean up the camera freeze!
     bl get_mailbox
 
     # only need to clean up if in the final smash
-    # normally, we'd check for 4 here, since that signifies we're in the final smash.
-    # however, the PSA sets the flag to 3 on exit for the action override in which the tennis is happening
+    # normally, we'd check for 5 here, since that signifies we're in the final smash.
+    # however, the PSA sets the flag to 4 on exit for the action override in which the tennis is happening
     # the exit routines actually DO run when you exit the match, funnily enough. we need to check for
-    # 3 as well as 4 as a result
-    cmpwi r3, 2
+    # 4 as well as 5 as a result
+    cmpwi r3, 3
     blt+ on_deactivate_end
+
+    # clear flag that freezes stage lighting
+    # we're basically undoing a set on this flag done by reset_camera
+    lis r3, 0x805A
+    lwz r3, -0x80(r3)
+    lbz r0, 0x465(r3)
+    rlwimi  r0, r31, 3, 28, 28
+    stb r0, 0x465(r3)
+
+    # we should only clean up the rest if we're exiting during the final smash scene itself
+    # cmpwi r3, 5
+    # bne- on_deactivate_done
 
     li r3, 1
     .int 0xC0DE0004 # hook that will be replaced with call to set_visibility_stage_effect in the module
@@ -245,13 +266,7 @@ on_deactivate: # called on match end - needed to clean up the camera freeze!
     mtctr r12
     bctrl
 
-    # clear flag that freezes stage lighting
-    # we're basically undoing a set on this flag done by reset_camera
-    lis r3, 0x805A
-    lwz r3, -0x80(r3)
-    lbz r0, 0x465(r3)
-    rlwimi  r0, r31, 3, 28, 28
-    stb r0, 0x465(r3)
+  on_deactivate_done:
 
     # set our mailbox variable to 0  so we don't do this a second time
     # onDeactivate appears to be called like 3 times over the course of ending a match
@@ -416,14 +431,15 @@ set_layer_disp:
 set_all_magnifying_glass:
   set_all_magnifying_glass_start:
     # set up stack / preserve variables
-    stwu sp, -28(sp)
+    stwu sp, -32(sp)
     mflr r0
-    stw r0, 32(sp)
+    stw r0, 36(sp)
     stw r3, 8(sp)  # passed-in - 1 to set LA-Bit[25] true, 0 for false
     stw r4, 12(sp)
     stw r27, 16(sp)  # loop counter
     # 20(sp) stores current fighter pointer
     # 24(sp) stores chosen function (onFlag/offFlag)
+    # 28(sp) stores current fighter's LA-Bit space pointer
 
     # 807ACD10 00000034 807ACD10 0 onFlag/[soWorkManageModuleImpl]/(so_work_manage_module_impl.o)
     # 807ACD44 00000034 807ACD44 0 offFlag/[soWorkManageModuleImpl]/(so_work_manage_module_impl.o)
@@ -471,9 +487,45 @@ set_all_magnifying_glass:
     lwz r3, 0x60(r3)
     lwz r3, 0xD8(r3)
     lwz r3, 0x64(r3)
+    stw r3, 28(sp)
 
+    # LA-Bit[25]
     lis r4, 0x1200
-    addi r4, r4, 0x19
+    addi r4, r4, 25
+
+    lwz r12, 24(sp)
+    mtctr r12
+    bctrl
+
+    lwz r3, 28(sp)
+
+    # LA-Bit[28]
+    lis r4, 0x1200
+    addi r4, r4, 28
+
+    lwz r12, 24(sp)
+    mtctr r12
+    bctrl
+
+    lwz r3, 28(sp)
+
+    # don't change LA-Bit[26] if LA-Bit[7] is true. in the PSA, Waluigi should have set this a frame or two
+    # beforehand - this is a poor man's way to identify him lol.
+    lis r4, 0x1200
+    addi r4, r4, 7
+    lis r12, 0x807A      # isFlag/[soWorkManageModuleImpl]/(so_work_manage_module_impl.o)
+    ori r12, r12, 0xCCDC #
+    mtctr r12
+    bctrl
+
+    cmpwi r3, 1
+    beq- before_next_loop
+
+    lwz r3, 28(sp)
+
+    # LA-Bit[26]
+    lis r4, 0x1200
+    addi r4, r4, 26
 
     lwz r12, 24(sp)
     mtctr r12
@@ -488,7 +540,7 @@ set_all_magnifying_glass:
     lwz r3, 8(sp)
     lwz r4, 12(sp)
     lwz r27, 16(sp)
-    lwz r0, 32(sp)
+    lwz r0, 36(sp)
     mtlr r0
     lwz sp, 0(sp)
     blr
