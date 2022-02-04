@@ -25583,6 +25583,150 @@ loc_1727C:
     /* 0001729C: */    .4byte 0x00000000
     # @ 0x16CE0
 
+# this is the function at 0x10518 in ft_captain.rel. we don't have maps that contain its name.
+unnamed_pause_func:
+                       stwu r1,-0x20(r1)
+                       mflr r0
+                       stw r0,0x24(r1)
+                       addi r11,r1,0x20
+                       bl loc_1CE04                             [R_PPC_REL24(0, 4, "loc_803F1324")]
+                       mr r28,r3
+                       mr r31,r4
+                       bl loc_1CE04                             [R_PPC_REL24(0, 4, "loc_8002E30C")]
+                       mr r29,r3
+                       li r30,-0x0
+                       b loc_17A3C
+loc_17A1C:
+                       mr r3,r29
+                       rlwinm r0,r30,2,0,29
+                       lis r4,-0x0                              [R_PPC_ADDR16_HA(112, 4, "loc_C0")]
+                       addi r4,r4,-0x0                          [R_PPC_ADDR16_LO(112, 4, "loc_C0")]
+                       lwzx r4,r4,r0
+                       mr r5,r31
+                       bl loc_1CE04                             [R_PPC_REL24(0, 4, "loc_8002F048")]
+                       addi r30,r30,0x1
+loc_17A3C:
+                       cmplwi r30,0x6
+                       blt+ loc_17A1C
+                       lis r3,-0x0                              [R_PPC_ADDR16_HA(0, 11, "loc_8059FF80")]
+                       lwz r3,-0x0(r3)                          [R_PPC_ADDR16_LO(0, 11, "loc_8059FF80")]
+                       lbz r0,0x465(r3)
+                       rlwimi r0,r31,3,28,28
+                       stb r0,0x465(r3)
+                       li r30,-0x0
+                       b loc_17A8C
+loc_17A60:
+                       mr r3,r29
+                       rlwinm r0,r30,2,0,29
+                       b loc_17A88
+                       addi r4,r4,-0x0
+                       lwzx r4,r4,r0
+                       bl loc_1CE04                             [R_PPC_REL24(0, 4, "loc_8002EF1C")]
+                       cmpwi r3,-0x0
+                       beq- loc_17A88
+                       mr r4,r31
+                       bl loc_1CE04                             [R_PPC_REL24(0, 4, "loc_8002DC18")]
+loc_17A88:
+                       addi r30,r30,0x1
+loc_17A8C:
+                       cmplwi r30,0x2
+                       blt+ loc_17A60
+                       lis r3,-0x0                              [R_PPC_ADDR16_HA(27, 6, "loc_2E68")]
+                       lwz r3,-0x0(r3)                          [R_PPC_ADDR16_LO(27, 6, "loc_2E68")]
+                       mr r4,r31
+                       bl loc_1CE04                             [R_PPC_REL24(0, 4, "loc_8002DC18")]
+                       cmpwi r31,-0x0
+
+                       # skipping this code. this normally would look through all of Falcon's "links" to see if Kirby
+                       # is there, and if so, remove his copy ability. we don't go through the trouble of doing that,
+                       # as that's a lot of work and arguably gold plating.
+                       # beq- loc_17BCC
+                       b loc_17BCC
+
+                       lwz r3,0xD8(r28)
+                       lwz r3,0x64(r3)
+                       lis r4,0x2000
+                       addi r4,r4,0x1
+                       lwz r12,-0x0(r3)
+                       lwz r12,0x18(r12)
+                       mtctr r12
+                       bctrl
+                       bl loc_1CE04                             [R_PPC_REL24(0, 4, "loc_8002DC40")]
+                       cmpwi r3,-0x0
+                       beq- loc_17AE0
+                       li r4,-0x0
+                       bl loc_1CE04                             [R_PPC_REL24(0, 4, "loc_8002DC18")]
+loc_17AE0:
+                       lwz r3,0xD8(r28)
+                       lwz r3,0x64(r3)
+                       lis r4,0x2000
+                       lwz r12,-0x0(r3)
+                       lwz r12,0x18(r12)
+                       mtctr r12
+                       bctrl
+                       mr r31,r3
+                       lis r3,-0x0
+                       lwz r30,-0x0(r3)
+                       li r29,-0x0
+                       b loc_17BC4
+loc_17B10:
+                       lwz r3,-0x0(r30)
+                       addis r0,r3,0x1
+                       cmplwi r0,0xFFFF
+                       beq- loc_17BBC
+                       lbz r0,0x24(r30)
+                       rlwinm. r0,r0,25,31,31
+                       beq- loc_17BBC
+                       bl loc_1CE04                             [R_PPC_REL24(0, 4, "loc_8002DC40")]
+                       cmpwi r3,-0x0
+                       beq- loc_17BBC
+                       li r4,0x3C
+                       lis r5,-0x0
+                       addi r5,r5,-0x0
+                       lis r6,-0x0
+                       addi r6,r6,-0x0
+                       li r0,-0x0
+                       extsh r7,r0
+                       bl loc_1CE04                             [R_PPC_REL24(0, 4, "loc_803F0F44")]
+                       lwz r12,0x3C(r3)
+                       lwz r12,0x2F0(r12)
+                       mtctr r12
+                       bctrl
+                       cmpwi r3,0x5
+                       bne- loc_17BBC
+                       lwz r3,0x8(r30)
+                       lwz r3,0xD8(r3)
+                       lwz r3,0x84(r3)
+                       li r4,0xA
+                       lwz r12,-0x0(r3)
+                       lwz r12,0x68(r12)
+                       mtctr r12
+                       bctrl
+                       cmpwi r3,-0x0
+                       beq- loc_17BBC
+                       li r4,-0x0
+                       lis r5,-0x0
+                       addi r5,r5,-0x0
+                       lis r6,-0x0
+                       addi r6,r6,-0x0
+                       extsh r7,r4
+                       bl loc_1CE04                             [R_PPC_NONE(0, 4, "loc_803F0F44")]
+                       li r4,-0x0
+                       bl loc_1CE04                             [R_PPC_REL24(0, 4, "loc_8002DC18")]
+loc_17BBC:
+                       addi r29,r29,0x1
+                       addi r30,r30,0x28
+loc_17BC4:
+                       cmpw r29,r31
+                       blt+ loc_17B10
+loc_17BCC:
+                       addi r11,r1,0x20
+                       bl loc_1CE04                             [R_PPC_REL24(0, 4, "loc_803F1370")]
+                       lwz r0,0x24(r1)
+                       mtlr r0
+                       addi r1,r1,0x20
+                       blr
+
 every_frame:
   every_frame_start:
     # set up stack / preserve variables
@@ -25611,6 +25755,10 @@ every_frame:
     # set the magnifying glass of all 4 characters to NOT show
     li r3, 0
     bl set_all_magnifying_glass
+
+    mr r3, r31
+    li r4, 1
+    bl unnamed_pause_func
 
     b every_frame_end
 
@@ -25758,11 +25906,14 @@ every_frame:
     # clear flag that freezes stage lighting
     # TODO: move this to being done in a phase when the final smash state is finally exited
     # (e.g. when the final smash lighting fades out)
-    lis r3, 0x805A
-    lwz r3, -0x80(r3)
-    lbz r0, 0x465(r3)
-    rlwimi  r0, r31, 3, 28, 28
-    stb r0, 0x465(r3)
+    # lis r3, 0x805A
+    # lwz r3, -0x80(r3)
+    # lbz r0, 0x465(r3)
+    # rlwimi  r0, r31, 3, 28, 28
+    # stb r0, 0x465(r3)
+    mr r3, r31
+    li r4, 0
+    bl unnamed_pause_func
 
     li r4, 0
     b set_var
@@ -25809,11 +25960,14 @@ on_deactivate: # called on match end - needed to clean up the camera freeze!
 
     # clear flag that freezes stage lighting
     # we're basically undoing a set on this flag done by reset_camera
-    lis r3, 0x805A
-    lwz r3, -0x80(r3)
-    lbz r0, 0x465(r3)
-    rlwimi  r0, r31, 3, 28, 28
-    stb r0, 0x465(r3)
+    # lis r3, 0x805A
+    # lwz r3, -0x80(r3)
+    # lbz r0, 0x465(r3)
+    # rlwimi  r0, r31, 3, 28, 28
+    # stb r0, 0x465(r3)
+    mr r3, r31
+    li r4, 0
+    bl unnamed_pause_func
 
     # we should only clean up the rest if we're exiting during the final smash scene itself
     lwz r3, 16(sp)

@@ -68,7 +68,8 @@ loc_B4:
 loc_B8:
         .4byte 0x3F800000
         .4byte 0x00000000
-        .4byte 0x00000000
+loc_C0:
+        .4byte 0x0000000B
         .4byte 0x00000000
         .4byte 0x00000000
         .4byte 0x00000000
