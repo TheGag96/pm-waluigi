@@ -70,11 +70,11 @@ loc_B8:
         .4byte 0x00000000
 loc_C0:
         .4byte 0x0000000B
-        .4byte 0x00000000
-        .4byte 0x00000000
-        .4byte 0x00000000
-        .4byte 0x00000000
-        .4byte 0x00000000
+        .4byte 0x00000009
+        .4byte 0x0000000C
+        .4byte 0x00000005
+        .4byte 0x00000006
+        .4byte 0x00000021
         .4byte 0x00000000
         .4byte 0x00000000
         .4byte 0x00000000
