@@ -25756,11 +25756,14 @@ every_frame:
     li r3, 0
     bl set_all_magnifying_glass
 
+    # pause the stage and other stuff
     mr r3, r31
     li r4, 1
     bl unnamed_pause_func
 
-    b every_frame_end
+    # clear mailbox value (no need to maintain an "in-pre-final-smash state")
+    li r4, 0
+    b set_var
 
   enter_final_smash:
     # freeze pause camera
@@ -25790,6 +25793,7 @@ every_frame:
     li r3, 0
     bl set_visibility_stage_effect
 
+    # this space in section 6 is used to store the postion before the final smash scene
     lis r3, 0       [R_PPC_ADDR16_HA(112, 6, "loc_330")]
     addi r3, r3, 0  [R_PPC_ADDR16_LO(112, 6, "loc_330")]
 
@@ -25798,6 +25802,7 @@ every_frame:
     lwz r4, 0x18(r4)
 
     # call getPos/[soPostureModuleSimple]/(so_posture_module_impl.o)
+    # (note that this stores into r3)
     lis r12, 0x8073
     subi r12, r12, 0x564
     mtctr r12
@@ -25852,6 +25857,7 @@ every_frame:
 
     bl pop_stage_camera
 
+    # cancel the final smash scene
     bl reset_camera
 
     # unhide stage layer
@@ -25868,6 +25874,7 @@ every_frame:
     mtctr r12
     bctrl
 
+    # grab our saved position from section 6 from before the scene so we can restore it
     lis r4, 0       [R_PPC_ADDR16_HA(112, 6, "loc_330")]
     addi r4, r4, 0  [R_PPC_ADDR16_LO(112, 6, "loc_330")]
 
@@ -25903,14 +25910,7 @@ every_frame:
     b set_var
 
   finish_final_smash:
-    # clear flag that freezes stage lighting
-    # TODO: move this to being done in a phase when the final smash state is finally exited
-    # (e.g. when the final smash lighting fades out)
-    # lis r3, 0x805A
-    # lwz r3, -0x80(r3)
-    # lbz r0, 0x465(r3)
-    # rlwimi  r0, r31, 3, 28, 28
-    # stb r0, 0x465(r3)
+    # undo stage (and other stuff) pause
     mr r3, r31
     li r4, 0
     bl unnamed_pause_func
@@ -25993,13 +25993,8 @@ on_deactivate: # called on match end - needed to clean up the camera freeze!
     cmpwi r3, 3
     blt+ on_deactivate_end
 
-    # clear flag that freezes stage lighting
-    # we're basically undoing a set on this flag done by reset_camera
-    # lis r3, 0x805A
-    # lwz r3, -0x80(r3)
-    # lbz r0, 0x465(r3)
-    # rlwimi  r0, r31, 3, 28, 28
-    # stb r0, 0x465(r3)
+    # undo stage (and other stuff) pause
+    # this intentionally is called after reset_camera because of a byte of flags (0x8059FF80+0x465) that is affected by both
     mr r3, r31
     li r4, 0
     bl unnamed_pause_func
