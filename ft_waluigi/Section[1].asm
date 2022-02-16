@@ -25606,7 +25606,7 @@ loc_17A1C:
                        bl loc_1CE04                             [R_PPC_REL24(0, 4, "loc_8002F048")]
                        addi r30,r30,0x1
 loc_17A3C:
-                       cmplwi r30,0x6
+                       cmplwi r30,0x5   # changed from 6 because one we intentionally use one less pause category
                        blt+ loc_17A1C
                        lis r3,-0x0                              [R_PPC_ADDR16_HA(0, 11, "loc_8059FF80")]
                        lwz r3,-0x0(r3)                          [R_PPC_ADDR16_LO(0, 11, "loc_8059FF80")]
@@ -25950,29 +25950,14 @@ on_deactivate: # called on match end - needed to clean up the camera freeze!
     bl get_mailbox
     stw r3, 16(sp)
 
-    # only need to clean up if in the final smash
+    # we should only clean up the following stuff if we're exiting during the final smash scene itself
+    # however, we still need to clean up the stage freeze potentially - see the jump
     # normally, we'd check for 5 here, since that signifies we're in the final smash.
     # however, the PSA sets the flag to 4 on exit for the action override in which the tennis is happening
     # the exit routines actually DO run when you exit the match, funnily enough. we need to check for
-    # 4 as well as 5 as a result
+    # 4 as well as 5 as a result later
     cmpwi r3, 3
-    blt+ on_deactivate_end
-
-    # clear flag that freezes stage lighting
-    # we're basically undoing a set on this flag done by reset_camera
-    # lis r3, 0x805A
-    # lwz r3, -0x80(r3)
-    # lbz r0, 0x465(r3)
-    # rlwimi  r0, r31, 3, 28, 28
-    # stb r0, 0x465(r3)
-    mr r3, r31
-    li r4, 0
-    bl unnamed_pause_func
-
-    # we should only clean up the rest if we're exiting during the final smash scene itself
-    lwz r3, 16(sp)
-    cmpwi r3, 3
-    bne- on_deactivate_done
+    bne- on_deactivate_undo_stage_freeze
 
     li r3, 1
     bl set_visibility_stage_effect
@@ -26002,8 +25987,24 @@ on_deactivate: # called on match end - needed to clean up the camera freeze!
     mtctr r12
     bctrl
 
-  on_deactivate_done:
+  on_deactivate_undo_stage_freeze:
+    # only need to clean up if we were in any phase of the final smash (see earlier comment about the values)
+    lwz r3, 16(sp)
+    cmpwi r3, 3
+    blt+ on_deactivate_end
 
+    # clear flag that freezes stage lighting
+    # we're basically undoing a set on this flag done by reset_camera
+    # lis r3, 0x805A
+    # lwz r3, -0x80(r3)
+    # lbz r0, 0x465(r3)
+    # rlwimi  r0, r31, 3, 28, 28
+    # stb r0, 0x465(r3)
+    mr r3, r31
+    li r4, 0
+    bl unnamed_pause_func
+
+  on_deactivate_done:
     # set our mailbox variable to 0  so we don't do this a second time
     # onDeactivate appears to be called like 3 times over the course of ending a match
     # the "stack" can go negative if you call too many times with 0, so it's important

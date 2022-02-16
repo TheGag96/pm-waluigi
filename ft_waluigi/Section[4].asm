@@ -68,13 +68,13 @@ loc_B4:
 loc_B8:
         .4byte 0x3F800000
         .4byte 0x00000000
-loc_C0:
+final_pause_category_list: # Falcon would normally include 0xC also but that affects Harry, so we don't do that
         .4byte 0x0000000B
         .4byte 0x00000009
-        .4byte 0x0000000C
         .4byte 0x00000005
         .4byte 0x00000006
         .4byte 0x00000021
+        .4byte 0x00000000
         .4byte 0x00000000
         .4byte 0x00000000
         .4byte 0x00000000
