@@ -25399,7 +25399,7 @@ loc_16EF0:
     /* 00016FF4: */    .4byte 0x00000000
     /* 00016FF8: */    .4byte 0x00000000
     /* 00016FFC: */    .4byte 0x00000000
-loc_17000:
+get_resource:
     /* 00017000: */    stwu r1,-0x20(r1)
     /* 00017004: */    mflr r0
     /* 00017008: */    stw r0,0x24(r1)
@@ -25421,7 +25421,11 @@ loc_17000:
     /* 00017048: */    li r0,0x1
     /* 0001704C: */    extsh r7,r0
     /* 00017050: */    bl loc_1CB28                             [R_PPC_REL24(0, 4, "loc_803F0F44")]
+
+    # edited from original - now calls getEtcResId/[ftResourceIdAccesserImpl]/(ft_resource_id_accesser_impl.o) instead
+    # of getFinalResId
     /* 00017054: */    bl loc_1CB28                             [R_PPC_REL24(27, 1, "loc_14DA2C")]
+
     /* 00017058: */    mr r31,r3
     /* 0001705C: */    li r3,-0x0
     /* 00017060: */    bl loc_1CB28                             [R_PPC_REL24(27, 1, "loc_6FE80")]
@@ -25458,7 +25462,7 @@ loc_170D0:
     /* 000170D0: */    mr r3,r30
     /* 000170D4: */    li r4,0x1
     /* 000170D8: */    mr r5,r31
-    /* 000170DC: */    bl loc_17000
+    /* 000170DC: */    bl get_resource
     /* 000170E0: */    stw r3,0x14(r1)
     /* 000170E4: */    addi r3,r1,0x14
     /* 000170E8: */    li r4,-0x0
